@@ -27,8 +27,8 @@
     "npm": ">=6.0.0"
   },
   "scripts": {
-    "start": "egg-scripts start --daemon",
-    "stop": "egg-scripts stop",
+    "start": "egg-scripts start --daemon --title=egg-api-server",
+    "stop": "egg-scripts stop --title=egg-api-server",
     "dev": "egg-bin dev"
   },
   "ci": {

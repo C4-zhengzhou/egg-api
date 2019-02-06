@@ -1,4 +1,4 @@
-// production环境下的配置
+// 生产环境下的配置
 
 module.exports = appInfo => {
   const config = (exports = {})
@@ -8,6 +8,12 @@ module.exports = appInfo => {
     options: {
       user: 'c4',
       pass: 'c4'
+    }
+  }
+  config.cluster = {
+    listen: {
+      // 服务端口
+      port: 8300
     }
   }
 

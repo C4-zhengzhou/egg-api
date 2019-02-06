@@ -1,4 +1,4 @@
-// production环境下的配置
+// 开发环境下的配置
 
 module.exports = appInfo => {
   const config = (exports = {})
