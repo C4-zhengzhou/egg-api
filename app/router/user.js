@@ -9,7 +9,6 @@ module.exports = app => {
   // app.router.post('/api/v1/user/wxRegister', user.wxRegister)
   // app.router.post('/api/v1/user/wxLogin', user.wxLogin)
   // app.router.post('/api/v1/user/bindPhone', user.bindPhone)
-  // app.router.get('/api/v1/user/refresh', user.getCurrentUserInfo)
 
   app.router.resources('/api/v1/user', user)
 }

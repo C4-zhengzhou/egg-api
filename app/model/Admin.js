@@ -26,10 +26,13 @@ module.exports = app => {
       },
       // 所属角色
       role: { type: String },
+      // 关联用户
+      user: { type: String, ref: 'User' },
       // 当前token
       token: { type: String },
       state: { type: String },
-      available: { type: Boolean, default: true },
+      // 是否可用
+      available: { type: Boolean, default: false },
       // 最后登录时间
       lastLoginTime: { type: Date },
       // 密码过期时间

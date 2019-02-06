@@ -28,7 +28,7 @@ module.exports = class extends require('egg').Controller {
     this.successWithPage(this.service.filter.filterData(list), page)
   }
   async create() {
-    this.service.role.requireLogin()
+    this.service.auth.requirelogin()
     let req = this.ctx.request.body
     req.author = this.ctx.state.user._id
     this.success(await this.model.create(req))
@@ -42,7 +42,7 @@ module.exports = class extends require('egg').Controller {
     }
   }
   async update() {
-    this.service.role.requireLogin()
+    this.service.auth.requirelogin()
     this.success(
       await this.model.findByIdAndUpdate(
         this.ctx.params.id,
@@ -52,7 +52,7 @@ module.exports = class extends require('egg').Controller {
     )
   }
   async destroy() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     this.success(await this.model.findByIdAndRemove(this.ctx.params.id))
   }
 }

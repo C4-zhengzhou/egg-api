@@ -7,17 +7,36 @@ module.exports = class extends require('egg').Controller {
       phone: {
         type: 'string',
         required: true,
-        allowEmpty: false,
         format: /^[0-9]{11}$/
       }
     }
   }
-  async register() {
+  async registerAdminCode() {
     this.ctx.validate(this.rule)
     const payload = this.ctx.request.body
     this.success(`sms to ${payload.phone} ok`)
   }
-  async login() {
+  async updateAdminCode() {
+    this.ctx.validate(this.rule)
+    const payload = this.ctx.request.body
+    this.success(`sms to ${payload.phone} ok`)
+  }
+  async loginAdminCode() {
+    this.ctx.validate(this.rule)
+    const payload = this.ctx.request.body
+    this.success(`sms to ${payload.phone} ok`)
+  }
+  async registerUserCode() {
+    this.ctx.validate(this.rule)
+    const payload = this.ctx.request.body
+    this.success(`sms to ${payload.phone} ok`)
+  }
+  async updateUserCode() {
+    this.ctx.validate(this.rule)
+    const payload = this.ctx.request.body
+    this.success(`sms to ${payload.phone} ok`)
+  }
+  async loginUserCode() {
     this.ctx.validate(this.rule)
     const payload = this.ctx.request.body
     this.success(`sms to ${payload.phone} ok`)

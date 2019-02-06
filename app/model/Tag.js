@@ -3,7 +3,7 @@ module.exports = app => {
     'Tag',
     new app.mongoose.Schema(
       {
-        _id: { type: String, required: true, unique: true, trim: true },
+        _id: { type: String },
         name: { type: String, required: true, unique: true, trim: true },
         searchable: { type: Boolean, default: true },
         type: { type: String },

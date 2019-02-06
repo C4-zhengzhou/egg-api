@@ -10,7 +10,7 @@ module.exports = app => {
         // 配置项名称
         name: { type: String, unique: true, required: true },
         // 配置项值
-        value: { type: Schema.Types.Mixed, required: true },
+        value: { type: app.mongoose.Schema.Types.Mixed, required: true },
         // 描述信息
         description: { type: String },
         // 是否可用

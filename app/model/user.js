@@ -14,7 +14,7 @@ module.exports = app => {
       // 微信openid
       wxid: { type: String, trim: true },
       // 密码
-      password: { type: String, required: true, trim: true },
+      password: { type: String, trim: true },
       // 昵称
       nickName: { type: String, trim: true },
       // 真实姓名

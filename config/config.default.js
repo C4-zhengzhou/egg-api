@@ -22,20 +22,16 @@ module.exports = appInfo => {
     passthrough: true,
     // jwt加盐字段
     secret: 'C4-jwt-salt',
-    match: '/auth',
+    match: '/',
     getToken(ctx) {
       // 请求头部携带的jwt字段名
-      return ctx.request.header['x-c4-token']
+      return ctx.request.header['x-c4-token'] || ''
     },
-    option: {
-      // token过期时间
-      expiresIn: '2h'
-    }
+    // token过期时间
+    expiresIn: '2h'
   }
   config.cluster = {
     listen: {
-      // 服务端口
-      port: 3000,
       hostname: '127.0.0.1'
     }
   }

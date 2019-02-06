@@ -11,7 +11,7 @@ module.exports = class extends require('egg').Controller {
     this.success(this.service.filter.filterData(list))
   }
   async create() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     const req = this.ctx.request.body
     this.success(await this.model.create(req))
   }
@@ -24,7 +24,7 @@ module.exports = class extends require('egg').Controller {
     }
   }
   async update() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     this.success(
       await this.model.findByIdAndUpdate(
         this.ctx.params.id,
@@ -34,7 +34,7 @@ module.exports = class extends require('egg').Controller {
     )
   }
   async destroy() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     this.success(await this.model.findByIdAndRemove(this.ctx.params.id))
   }
 }

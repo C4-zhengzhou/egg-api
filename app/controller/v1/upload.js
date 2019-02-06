@@ -13,9 +13,18 @@ module.exports = class extends require('egg').Controller {
     })
   }
   async image() {
+    this.service.auth.requireLogin()
     const stream = await this.ctx.getFileStream()
     const name =
-      'c4/image/' + this.service.file.generateFileName(stream.filename)
+    'c4/image/' + this.service.file.generateFileName(stream.filename)
+    let result = await this.ossClient.put(name, stream)
+    this.success(result.url)
+  }
+  async attachment() {
+    this.service.auth.requireLogin()
+    const stream = await this.ctx.getFileStream()
+    const name =
+      'c4/attachment/' + this.service.file.generateFileName(stream.filename)
     let result = await this.ossClient.put(name, stream)
     this.success(result.url)
   }

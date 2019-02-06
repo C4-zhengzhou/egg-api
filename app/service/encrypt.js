@@ -9,9 +9,11 @@ module.exports = class extends require('egg').Service {
     return this.app.jwt.sign(
       {
         _id: user._id,
+        nickName: user.nickName,
         role: user.role
       },
-      this.config.jwt.secret
+      this.config.jwt.secret,
+      { expiresIn: this.config.jwt.expiresIn }
     )
   }
   isTokenExp() {

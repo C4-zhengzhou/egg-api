@@ -16,7 +16,7 @@ module.exports = class extends require('egg').Service {
   }
   requireAdmin() {
     this.requireLogin()
-    if (this.user.role !== 'admin') {
+    if (this.user.role !== 'admin' || this.user.role !== 'superAdmin') {
       this.throw(`当前用户不是管理员`)
     }
   }

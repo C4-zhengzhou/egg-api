@@ -6,13 +6,13 @@ module.exports = class extends require('egg').Controller {
     this.model = this.ctx.model['ArticleComment']
   }
   async index() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     const query = this.ctx.query
     const list = await this.model.find(query).exec()
     this.success(this.service.filter.filterData(list))
   }
   async create() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     const req = this.ctx.request.body
     this.success(await this.model.create(req))
   }
@@ -25,7 +25,7 @@ module.exports = class extends require('egg').Controller {
     }
   }
   async update() {
-    this.service.role.requireLogin()
+    this.service.auth.requirelogin()
     this.success(
       await this.model.findByIdAndUpdate(
         this.ctx.params.id,
@@ -35,7 +35,7 @@ module.exports = class extends require('egg').Controller {
     )
   }
   async destroy() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     this.success(await this.model.findByIdAndRemove(this.ctx.params.id))
   }
 }

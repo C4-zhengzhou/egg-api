@@ -4,108 +4,94 @@ module.exports = class extends require('egg').Controller {
     this.successWithPage = this.ctx.helper.successWithPage
     this.success = this.ctx.helper.success
     this.error = this.ctx.helper.error
-    this.model = this.ctx.model['Users']
-  }
-  async getRegisterSmsCode() {
-    let payload = this.ctx.request.body
-    this.service.validate.require('phone')
-    this.service.validate.isMobile(payload.phone)
-    this.success('sms ok')
+    this.model = this.ctx.model['User']
+    this.accountRule = {
+      account: {
+        type: 'string',
+        required: true,
+        min: 6,
+        max: 16
+      }
+    }
+    this.phoneRule = {
+      phone: {
+        type: 'string',
+        required: true,
+        format: /^[0-9]{11}$/
+      }
+    }
+    this.emailRule = {
+      email: {
+        type: 'email',
+        required: true
+      }
+    }
+    this.passwordRule = {
+      password: {
+        type: 'password',
+        required: true,
+        min: 6,
+        max: 16
+      }
+    }
   }
   async registerByPhone() {
+    this.ctx.validate(this.phoneRule)
     let payload = this.ctx.request.body
-    this.service.validate.require('phone', 'password')
-    this.service.validate.isMobile(payload.phone)
-    this.service.validate.minLength(payload.password, 6)
     if (await this.model.findOne({ phone: payload.phone })) {
       this.error(`手机号 ${payload.phone} 已经注册`)
     } else {
-      this.model.create({
+      const newUser = await this.model.create({
         phone: payload.phone,
-        userName: payload.userName
-          ? payload.userName
-          : `用户${payload.phone.slice(7, 11)}`,
-        password: this.service.encrypt.signPassword(payload.password),
+        nickName: payload.nickName
+          ? payload.nickName
+          : `用户${payload.phone.substr(-4)}`,
+        password: payload.password
+          ? this.service.encrypt.signPassword(payload.password)
+          : undefined,
         role: 'user'
       })
-      this.success(`新账号 ${payload.phone} 注册成功`)
+      this.success(`新账号 ${newUser.nickName} 注册成功`)
     }
   }
   async loginByPhone() {
+    this.ctx.validate(this.phoneRule)
+    this.ctx.validate(this.passwordRule)
     const payload = this.ctx.request.body
-    this.service.validate.require('phone', 'password')
-    this.service.validate.isMobile(payload.phone)
-    this.service.validate.minLength(payload.password, 6)
     let user = await this.model.findOne({ phone: payload.phone })
     if (!user) {
       this.error(`手机号 ${payload.phone} 不存在`)
     } else {
       const password = this.service.encrypt.signPassword(payload.password)
-      if (user.password != password) {
+      if (user.password !== password) {
         this.error(`密码验证失败`)
       } else {
-        const token = this.app.jwt.sign(
-          {
-            _id: user._id,
-            role: user.role
-          },
-          this.config.jwt.secret
-        )
-        this.success({
-          _id: user._id,
-          phone: user.phone,
-          avatar: user.avatar,
-          userName: user.userName,
-          role: user.role,
-          token
-        })
         user.lastLoginTime = Date.now()
-        await user.save()
+        const newUserData = await user.save()
+        this.success({
+          _id: newUserData._id,
+          phone: newUserData.phone,
+          avatar: newUserData.avatar,
+          nickName: newUserData.nickName,
+          role: newUserData.role,
+          token: this.service.encrypt.signJwt(newUserData)
+        })
       }
     }
   }
-  async registerAdmin() {
+  async addPhone() {
+    this.ctx.validate(this.phoneRule)
     const payload = this.ctx.request.body
-    const user = await this.model.findOne({
-      phoneNum: payload.phoneNum
-    })
-    if (user) {
-      this.error(`手机号${payload.phoneNum}已经注册`)
+    if (!this.ctx.state.user) {
+      this.error('身份验证错误')
     } else {
-      let newUser = await this.model.create({
-        phoneNum: payload.phoneNum,
-        userName: payload.userName,
-        password: this.service.encrypt.signPassword(payload.password),
-        avatar:
-          payload.avatar ||
-          'https://quincy-dev-temp.oss-cn-beijing.aliyuncs.com/qtt/img/userFace.jpg',
-        isPhoneVerify: true,
-        role: 'admin',
-        state: 'normal'
-      })
-      this.success(`新用户${newUser.phoneNum}注册成功`)
-    }
-  }
-  async adminLogin() {
-    const payload = this.ctx.request.body
-    const user = await this.model.findOne({
-      phoneNum: payload.phoneNum
-    })
-    if (!user) {
-      this.error(`用户${payload.phoneNum}不存在`)
-    } else if (
-      user.password !== this.service.encrypt.signPassword(payload.password)
-    ) {
-      this.error(`密码错误`)
-    } else if (!user.isPhoneVerify) {
-      this.error(`用户手机号未通过验证`)
-    } else {
-      user.token = this.service.encrypt.signJwt(user)
-      this.success(user)
+      let user = await this.model.findById(this.ctx.state.user._id)
+      user.phone = payload.phone
+      await user.save()
+      this.success('绑定手机号成功')
     }
   }
   async wxLogin() {
-    const service = this.service
     const payload = this.ctx.request.body
     const wxData = (await this.ctx.curl(
       `https://api.weixin.qq.com/sns/jscode2session?appid=${
@@ -121,103 +107,69 @@ module.exports = class extends require('egg').Controller {
     if (user) {
       this.success({
         _id: user._id,
-        phoneNum: user.phoneNum,
-        isPhoneVerify: user.isPhoneVerify,
+        phone: user.phone,
         avatar: user.avatar,
-        userName: user.userName,
+        nickName: user.nickName,
         role: user.role,
-        token: service.encrypt.signJwt(user)
+        token: this.service.encrypt.signJwt(user)
       })
     } else {
-      this.error({ openid: wxData.openid, msg: '当前用户不存在' })
+      this.error('当前用户未注册')
     }
   }
   async wxRegister() {
     const userInfo = this.ctx.request.body
-    let newUser = await this.model.create({
+    const user = await this.model.create({
       wxid: userInfo.openid,
       avatar: userInfo.avatarUrl,
-      userName: userInfo.nickName,
+      nickName: userInfo.nickName,
       gender: userInfo.gender,
       province: userInfo.province,
       city: userInfo.city,
       country: userInfo.country,
-      role: 'wxuser',
-      state: 'normal'
+      role: 'wxuser'
     })
     this.success({
-      _id: newUser._id,
-      isPhoneVerify: newUser.isPhoneVerify,
-      avatar: newUser.avatar,
-      userName: newUser.userName,
-      role: newUser.role,
-      token: this.service.encrypt.signJwt(newUser)
+      _id: user._id,
+      phone: user.phone,
+      avatar: user.avatar,
+      nickName: user.nickName,
+      role: user.role,
+      token: this.service.encrypt.signJwt(user)
     })
   }
-  async bindPhone() {
-    if (!this.ctx.state.user) {
-      this.error('身份验证错误')
-    } else {
-      let user = await this.model.findById(this.ctx.state.user._id)
-      user.phoneNum = this.ctx.request.body.phoneNum
-      user.isPhoneVerify = true
-      user.save()
-      this.success('绑定手机号成功')
-    }
-  }
-  async getCurrentUserInfo() {
-    if (!this.ctx.state.user) {
-      this.error('签名失效')
-    } else {
-      let result = await this.model.findById(this.ctx.state.user._id)
-      if (result) {
-        if (this.service.encrypt.isTokenExp()) {
-          service.send.error('当前用户登录信息过期，请重新授权', 401)
-        } else {
-          this.success(result)
-        }
-      } else {
-        this.error('资源不存在')
-      }
-    }
-  }
   async changePassword() {
+    this.ctx.validate({
+      oldPassword: {
+        type: 'password',
+        required: true,
+        min: 6,
+        max: 16
+      },
+      newPassword: {
+        type: 'password',
+        compare: 'newPassword2',
+        required: true,
+        min: 6,
+        max: 16
+      },
+      newPassword2: {
+        type: 'password',
+        required: true,
+        min: 6,
+        max: 16
+      }
+    })
     const payload = this.ctx.request.body
-    this.service.validate.require('oldPassword', 'newPassword')
-    this.service.validate.minLength(payload.newPassword, 6)
-  }
-  async faviInfoList() {
-    const userId = this.ctx.params.id
-    if (this.ctx.state.user._id !== userId && this.service.role.isAdmin()) {
-      this.error('权限不足')
+    let user = await this.model.findById(this.ctx.state.user.user)
+    if (
+      user.password !== this.service.encrypt.signPassword(payload.oldPassword)
+    ) {
+      this.error(`原密码验证失败`)
     } else {
-      // const Infos = this.ctx.model['Infos']
-      const user = await this.model
-        .findById(userId)
-        .populate({
-          path: 'faviList',
-          select: 'title createTime content',
-          populate: [
-            { path: 'author', select: 'avatar userName' },
-            { path: 'type', select: 'name' },
-            { path: 'district', select: 'name' }
-          ]
-        })
-        .exec()
-      this.success(user.faviList)
-    }
-  }
-  async infoList() {
-    const userId = this.ctx.params.id
-    if (this.ctx.state.user._id !== userId && this.service.role.isAdmin()) {
-      this.error('权限不足')
-    } else {
-      const list = await this.ctx.model['Infos']
-        .find({ author: userId })
-        .populate([{ path: 'district', select: 'name' },{ path: 'type', select: 'name' }])
-        .sort('-createTime')
-        .exec()
-      this.success(list)
+      user.password = payload.newPassword
+      await user.save()
+      this.success('密码修改成功')
     }
   }
   async index() {
@@ -242,29 +194,38 @@ module.exports = class extends require('egg').Controller {
     this.successWithPage(this.service.filter.filterData(list), page)
   }
   async create() {
-    const req = this.ctx.request.body
-    this.service.role.requireAdmin()
-    if (req.role !== 'fake') {
-      this.service.validate.require('phoneNum', 'userName', 'password')
-      this.service.validate.minLength(req.password, 6)
-      this.service.validate.maxLength(req.password, 16)
-    }
-    req.email ? this.service.validate.isEmail(req.email) : null
-    req.avatar =
-      req.avatar ||
-      'https://quincy-dev-temp.oss-cn-beijing.aliyuncs.com/qtt/img/userFace.jpg'
-
-    this.service.validate.isMobile(req.phoneNum)
-    if (await this.model.findOne({ phoneNum: req.phoneNum })) {
-      this.error(`手机号 ${req.phoneNum} 已经注册`)
+    this.service.auth.requireAdmin()
+    const payload = this.ctx.request.body
+    payload.account ? this.ctx.validate(this.accountRule) : null
+    payload.phone ? this.ctx.validate(this.phoneRule) : null
+    payload.email ? this.ctx.validate(this.emailRule) : null
+    if (
+      payload.account &&
+      (await this.model.findOne({ account: payload.account }))
+    ) {
+      this.error(`账号 ${payload.account} 已经注册`)
+    } else if (
+      payload.phone &&
+      (await this.model.findOne({ phone: payload.phone }))
+    ) {
+      this.error(`手机号 ${payload.phone} 已经注册`)
+    } else if (
+      payload.email &&
+      (await this.model.findOne({ email: payload.email }))
+    ) {
+      this.error(`邮箱 ${payload.email} 已经注册`)
     } else {
-      req.password = this.service.encrypt.signPassword(req.password)
-      this.model.create(req)
-      this.success(`新账号 ${req.phoneNum} 添加成功`)
+      payload.password = this.service.encrypt.signPassword(payload.password)
+      this.model.create(payload)
+      this.success(
+        `新账号 ${payload.account} - ${payload.phone} - ${
+          payload.email
+        } 添加成功`
+      )
     }
   }
   async show() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     const result = await this.model.findById(this.ctx.params.id)
     if (result) {
       this.success(result)
@@ -273,7 +234,7 @@ module.exports = class extends require('egg').Controller {
     }
   }
   async update() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireLogin()
     this.success(
       await this.model.findByIdAndUpdate(
         this.ctx.params.id,
@@ -283,7 +244,7 @@ module.exports = class extends require('egg').Controller {
     )
   }
   async destroy() {
-    this.service.role.requireAdmin()
+    this.service.auth.requireAdmin()
     this.success(await this.model.findByIdAndRemove(this.ctx.params.id))
   }
 }

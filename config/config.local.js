@@ -4,10 +4,16 @@ module.exports = appInfo => {
   const config = (exports = {})
 
   config.mongoose = {
-    url: 'mongodb://192.168.1.222:27017/c4',
+    url: 'mongodb://127.0.0.1:27017/c4',
     options: {
       user: '',
       pass: ''
+    }
+  }
+  config.cluster = {
+    listen: {
+      // 服务端口
+      port: 3000
     }
   }
 
