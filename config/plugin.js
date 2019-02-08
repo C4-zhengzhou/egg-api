@@ -22,3 +22,7 @@ exports.routerPlus = {
   enable: true,
   package: 'egg-router-plus'
 }
+exports.logger = {
+  enable: true,
+  package: 'egg-logger'
+}

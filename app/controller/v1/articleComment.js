@@ -25,7 +25,7 @@ module.exports = class extends require('egg').Controller {
     }
   }
   async update() {
-    this.service.auth.requirelogin()
+    this.service.auth.requireLogin()
     this.success(
       await this.model.findByIdAndUpdate(
         this.ctx.params.id,

@@ -1,16 +1,17 @@
 const moment = require('moment')
 
 module.exports = {
-  formatTime(time) {
+  formatFullTime(time) {
     return moment(time).format('YYYY-MM-DD HH:mm:ss')
   },
-  formatDate(date) {},
+  formatTime(time) {
+    return moment(time).format('HH:mm:ss')
+  },
+  formatDate(date) {
+    return moment(date).format('YYYY-MM-DD')
+  },
   error(msg, code) {
-    this.ctx.body = {
-      err: code || 1,
-      msg
-    }
-    this.ctx.status = 200
+    this.ctx.throw(code || 1, msg)
   },
   success(data) {
     this.ctx.body = {

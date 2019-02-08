@@ -16,14 +16,21 @@ module.exports = class extends require('egg').Service {
   }
   requireAdmin() {
     this.requireLogin()
-    if (this.user.role !== 'admin' || this.user.role !== 'superAdmin') {
+    if (!this.service.auth.isAdmin()) {
       this.throw(`当前用户不是管理员`)
     }
   }
+  async userId() {
+    if (this.user.adminId) {
+      return (await this.ctx.model['Admin'].findById(this.user.adminId)).user
+    } else {
+      return this.user.userId
+    }
+  }
   isLogin() {
-    return !!this.user && this.user._id
+    return !!this.user && this.user.role
   }
   isAdmin() {
-    return !!this.user && this.user._id && this.user.role === 'admin'
+    return this.user.adminId && this.config.adminRoles.includes(this.user.role)
   }
 }

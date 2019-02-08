@@ -1,7 +1,7 @@
 const SMS = require('ali-sms')
 const accessConfig = {
-  accessKeyID: 'LTAIAoYCbC873skJ',
-  accessKeySecret: '4LmFRVxSVTYvQ1J5pw6hLXgFRNpb90'
+  accessKeyID: 'accessKeyID',
+  accessKeySecret: 'accessKeySecret'
 }
 module.exports = class extends require('egg').Service {
   async sendSms(phone, param) {

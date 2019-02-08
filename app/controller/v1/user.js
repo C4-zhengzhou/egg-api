@@ -74,7 +74,7 @@ module.exports = class extends require('egg').Controller {
           avatar: newUserData.avatar,
           nickName: newUserData.nickName,
           role: newUserData.role,
-          token: this.service.encrypt.signJwt(newUserData)
+          token: this.service.encrypt.signUserJwt(newUserData)
         })
       }
     }
@@ -111,7 +111,7 @@ module.exports = class extends require('egg').Controller {
         avatar: user.avatar,
         nickName: user.nickName,
         role: user.role,
-        token: this.service.encrypt.signJwt(user)
+        token: this.service.encrypt.signUserJwt(user)
       })
     } else {
       this.error('当前用户未注册')
@@ -135,7 +135,7 @@ module.exports = class extends require('egg').Controller {
       avatar: user.avatar,
       nickName: user.nickName,
       role: user.role,
-      token: this.service.encrypt.signJwt(user)
+      token: this.service.encrypt.signUserJwt(user)
     })
   }
   async changePassword() {

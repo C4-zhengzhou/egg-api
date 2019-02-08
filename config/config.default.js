@@ -20,15 +20,17 @@ module.exports = appInfo => {
   config.jwt = {
     enable: true,
     passthrough: true,
+    credentialsRequired: false,
     // jwt加盐字段
     secret: 'C4-jwt-salt',
     match: '/',
     getToken(ctx) {
       // 请求头部携带的jwt字段名
-      return ctx.request.header['x-c4-token'] || ''
+      return ctx.request.header['x-c4-token']
     },
     // token过期时间
-    expiresIn: '2h'
+    expiresIn: '2h',
+    refreshTime: 30 * 60 * 1000
   }
   config.cluster = {
     listen: {
@@ -42,7 +44,7 @@ module.exports = appInfo => {
       bufferMaxEntries: 0
     }
   }
-  config.middleware = ['errorHandler']
+  config.middleware = ['errorHandler', 'refreshToken']
   config.errorHandler = {
     match: '/api'
   }
@@ -72,6 +74,8 @@ module.exports = appInfo => {
   config.bcrypt = {
     saltRounds: 10
   }
+  // 管理员的角色名
+  config.adminRoles = ['admin', 'superAdmin']
 
   return config
 }

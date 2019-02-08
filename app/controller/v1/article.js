@@ -20,7 +20,10 @@ module.exports = class extends require('egg').Controller {
         .exec()
     }
     const list = await this.model
-      .find(query)
+      .find(
+        query,
+        'title category author like pv isPublish isRecommend createTime updateTime'
+      )
       .sort(req.sort || '-createTime')
       .skip(page.size * (page.page - 1))
       .limit(page.size)
@@ -28,27 +31,29 @@ module.exports = class extends require('egg').Controller {
     this.successWithPage(this.service.filter.filterData(list), page)
   }
   async create() {
-    this.service.auth.requirelogin()
+    this.service.auth.requireLogin()
     let req = this.ctx.request.body
-    req.author = this.ctx.state.user._id
+    req.author = await this.service.auth.userId()
     this.success(await this.model.create(req))
   }
   async show() {
-    const result = await this.model.findById(this.ctx.params.id)
+    let result = await this.model.findById(this.ctx.params.id)
     if (result) {
       this.success(result)
+      result.pv++
+      result.save()
     } else {
       this.error('资源不存在')
     }
   }
   async update() {
-    this.service.auth.requirelogin()
+    this.service.auth.requireLogin()
+    let payload = this.ctx.request.body
+    payload.updateTime = Date.now()
     this.success(
-      await this.model.findByIdAndUpdate(
-        this.ctx.params.id,
-        this.ctx.request.body,
-        { new: true }
-      )
+      await this.model.findByIdAndUpdate(this.ctx.params.id, payload, {
+        new: true
+      })
     )
   }
   async destroy() {

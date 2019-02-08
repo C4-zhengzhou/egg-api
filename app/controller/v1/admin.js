@@ -30,7 +30,6 @@ module.exports = class extends require('egg').Controller {
       phone: {
         type: 'string',
         required: true,
-        allowEmpty: false,
         format: /^[0-9]{11}$/
       },
       password: {
@@ -42,8 +41,8 @@ module.exports = class extends require('egg').Controller {
     }
   }
   async login() {
-    const payload = this.ctx.request.body
     this.ctx.validate(this.loginRule)
+    const payload = this.ctx.request.body
     let admin = await this.model.findOne({ phone: payload.phone })
     if (!admin) {
       this.error(`手机号为 ${payload.phone} 的管理员账号不存在`)
@@ -52,7 +51,7 @@ module.exports = class extends require('egg').Controller {
       if (admin.password != password) {
         this.error(`密码验证失败`)
       } else {
-        const token = this.service.encrypt.signJwt(admin)
+        const token = this.service.encrypt.signAdminJwt(admin)
         this.success({
           _id: admin._id,
           phone: admin.phone,

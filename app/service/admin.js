@@ -1,5 +1,3 @@
-const crypto = require('crypto')
-
 module.exports = class extends require('egg').Service {
   constructor(app) {
     super(app)
@@ -8,18 +6,24 @@ module.exports = class extends require('egg').Service {
   }
   addAccount(payload) {
     return new Promise(async (resolve, reject) => {
-      const user = await this.ctx.model['User'].findOne({
+      let user = await this.ctx.model['User'].findOne({
         phone: payload.phone
       })
       if (user) {
-        this.error('用户已存在')
-      } else {
-        payload.nickName = '管理员用户' + payload.phone.substr(-4)
-        const newUser = await this.ctx.model['User'].create(payload)
-        payload.user = newUser._id
-        const admin = await this.ctx.model['Admin'].create(payload)
-        resolve(admin)
+        user.nickName = '管理员用户' + payload.phone.substr(-4)
+        user.password = payload.password
+        user.role = 'user'
+        await user.save()
       }
+      let newUserData = {
+        ...payload,
+        nickName: payload.nickName || '管理员用户' + payload.phone.substr(-4),
+        available: true,
+        role: 'user'
+      }
+      const newUser = await this.ctx.model['User'].create(newUserData)
+      payload.user = newUser._id
+      resolve(await this.ctx.model['Admin'].create(payload))
     })
   }
   syncToUser(id) {
@@ -31,7 +35,8 @@ module.exports = class extends require('egg').Service {
         await user.save()
         resolve()
       } else {
-        user = Object.assign(user, admin)
+        user.nickName = admin.nickName
+        user.password = payload.password
         await user.save()
         resolve()
       }

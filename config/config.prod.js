@@ -13,7 +13,7 @@ module.exports = appInfo => {
   config.cluster = {
     listen: {
       // 服务端口
-      port: 8300
+      port: 3000
     }
   }
 
